@@ -15,7 +15,7 @@ inline_keyboard=[
         InlineKeyboardButton(text="Домашние задания (WIP)", callback_data="homework/")
     ],
     [
-        InlineKeyboardButton(text="Посещаемость/оценки (WIP)", callback_data="activity/")
+        InlineKeyboardButton(text="Посещаемость/оценки", callback_data="activity/0")
     ],
     [
         InlineKeyboardButton(text="Таблица лидеров", callback_data="leaderboard/stream")

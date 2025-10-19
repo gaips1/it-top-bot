@@ -28,8 +28,6 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-            # await self.update(access_token=scraper.access_token)
-            
             return profile
     
     async def get_leaderboard(self, id, state, is_group: bool = False):
@@ -39,8 +37,6 @@ class User(Base):
                 from routers.auth import auth_handler
                 await auth_handler(id, state, invalid=True)
                 return None
-            
-            # await self.update(access_token=scraper.access_token)
 
             return leaderboard
         
@@ -52,9 +48,17 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-            # await self.update(access_token=scraper.access_token)
-            
             return rewards
+        
+    async def get_activities(self, state):
+        async with self.scraper as scraper:
+            activities = await scraper.get_activity()
+            if not activities:
+                from routers.auth import auth_handler
+                await auth_handler(self.id, state, invalid=True)
+                return None
+            
+            return activities.root
 
     async def update(self, **kwargs):
         session: AsyncSession

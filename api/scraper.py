@@ -75,62 +75,69 @@ class TopAcademyScraper:
         info = await self.get_user_info()
         return info
     
-    async def get_leaderboard(self, is_group) -> models.StudentRatingList | None:
-        if not self.access_token:
-            logged_in = await self._login()
-            if not logged_in:
-                return None
+    async def get_leaderboard(self, is_group: bool) -> models.StudentRatingList | None:
+        endpoint = "leader-group" if is_group else "leader-stream"
+        url = f"{self.base_url}dashboard/progress/{endpoint}"
 
-        headers = {
-            "accept": "application/json, text/plain, */*",
-            "Authorization": f"Bearer {self.access_token}",
-            "Referer": "https://journal.top-academy.ru/"
-        }
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
 
-        async with self.session.get(
-            self.base_url + "dashboard/progress/leader-group" if is_group else self.base_url + "dashboard/progress/leader-stream",
-            headers = headers
-        ) as lb_response:
-            if lb_response.ok:
-                lb_data = await lb_response.json()
-                filtered_data = [item for item in lb_data if item.get('id') is not None]
-                leaderboard = models.StudentRatingList(root=filtered_data)
-                return leaderboard
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "Authorization": f"Bearer {self.access_token}",
+                "Referer": "https://journal.top-academy.ru/"
+            }
+
+            async with self.session.get(url, headers=headers) as response:
+                if response.ok:
+                    data = await response.json()
+                    return models.StudentRatingList(root=[item for item in data if item.get('id') is not None])
         
-        lgn = await self._login()
-        if not lgn:
-            return None
-        
-        lb = await self.get_leaderboard(is_group)
-        return lb
+        return None
     
     async def get_rewards(self) -> models.RewardsHistory | None:
-        if not self.access_token:
-            logged_in = await self._login()
-            if not logged_in:
-                return None
+        url = self.base_url + "dashboard/progress/activity"
 
-        headers = {
-            "accept": "application/json, text/plain, */*",
-            "Authorization": f"Bearer {self.access_token}",
-            "Referer": "https://journal.top-academy.ru/"
-        }
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
 
-        async with self.session.get(
-            self.base_url + "dashboard/progress/activity",
-            headers = headers
-        ) as rewards_response:
-            if rewards_response.ok:
-                rewards_data = await rewards_response.json()
-                rewards = models.RewardsHistory(rewards_data)
-                return rewards
-        
-        lgn = await self._login()
-        if not lgn:
-            return None
-        
-        rewards = await self.get_rewards()
-        return rewards
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "Authorization": f"Bearer {self.access_token}",
+                "Referer": "https://journal.top-academy.ru/"
+            }
+
+            async with self.session.get(url, headers=headers) as response:
+                if response.ok:
+                    data = await response.json()
+                    return models.RewardsHistory(root=data)
+
+        return None
+    
+    async def get_activity(self) -> models.ActivityList | None:
+        url = self.base_url + "progress/operations/student-visits"
+
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
+
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "Authorization": f"Bearer {self.access_token}",
+                "Referer": "https://journal.top-academy.ru/"
+            }
+
+            async with self.session.get(url, headers=headers) as response:
+                if response.ok:
+                    data = await response.json()
+                    return models.ActivityList(root=data)
+
+        return None
 
 if __name__ == '__main__':
     async def main():

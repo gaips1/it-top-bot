@@ -37,7 +37,8 @@ async def main():
         routers.start_router,
         routers.auth_router,
         routers.ld_router,
-        routers.rewards_router
+        routers.rewards_router,
+        routers.activity_router,
     )
 
     await dp.start_polling(bot)

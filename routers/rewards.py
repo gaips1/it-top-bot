@@ -20,8 +20,8 @@ async def rewards_handler(callback: CallbackQuery, user: User, state: FSMContext
     if not rewards:
         return
     
-    start_index = i * 25
-    end_index = (i + 1) * 25
+    start_index = i * 10
+    end_index = (i + 1) * 10
 
     rewards = rewards.root[start_index:end_index]
 
@@ -45,5 +45,5 @@ async def rewards_handler(callback: CallbackQuery, user: User, state: FSMContext
     if i > 0:
         reply_markup.inline_keyboard[0].insert(0, InlineKeyboardButton(text="Назад", callback_data="rewards/" + str(i-1)))
     
-    await callback.message.edit_text(text, reply_markup=reply_markup)
     await callback.answer()
+    await callback.message.edit_text(text, reply_markup=reply_markup)

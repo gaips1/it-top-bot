@@ -47,5 +47,5 @@ async def leaderboard(callback: CallbackQuery, user: User, state: FSMContext):
         ]
     )
     
-    await callback.message.edit_text(text, reply_markup=reply_markup)
     await callback.answer()
+    await callback.message.edit_text(text, reply_markup=reply_markup)

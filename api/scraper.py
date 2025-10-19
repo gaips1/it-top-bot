@@ -3,7 +3,8 @@ import aiohttp
 import api.models as models
 
 class TopAcademyScraper:
-    def __init__(self, username, password, access_token=None):
+    def __init__(self, id, username, password, access_token=None):
+        self.id = id
         self.username = username
         self.password = password
         self.base_url = 'https://msapi.top-academy.ru/api/v2/'
@@ -25,7 +26,7 @@ class TopAcademyScraper:
         if self.session:
             await self.session.close()
 
-    async def _login(self):
+    async def _login(self) -> bool:
         async with self.session.post(
             self.base_url + "auth/login",
             headers = {"accept": "application/json, text/plain, */*", "Referer": "https://journal.top-academy.ru/"},
@@ -38,6 +39,11 @@ class TopAcademyScraper:
                 return False
             
             print(f"Logged in as {self.username}")
+
+            from database.models import users
+            user = await users.get_user_by_id(self.id)
+            if user:
+                await user.update(access_token=self.access_token)
             
             return True
     
@@ -87,7 +93,8 @@ class TopAcademyScraper:
         ) as lb_response:
             if lb_response.ok:
                 lb_data = await lb_response.json()
-                leaderboard = models.StudentRatingList(lb_data)
+                filtered_data = [item for item in lb_data if item.get('id') is not None]
+                leaderboard = models.StudentRatingList(root=filtered_data)
                 return leaderboard
         
         lgn = await self._login()

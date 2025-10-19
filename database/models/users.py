@@ -10,16 +10,15 @@ from api.models.userinfo import StudentProfile
 
 class User(Base):
     __tablename__ = 'users'
-    __table_args__ = {'schema': 'ittopbot'}
 
     id = Column(BIGINT, nullable=False, index=True, unique=True, primary_key=True, autoincrement=False)
-    username = Column(String, nullable=True)
-    password = Column(String, nullable=True)
-    access_token = Column(String, nullable=True)
+    username = Column(String(255), nullable=True)
+    password = Column(String(255), nullable=True)
+    access_token = Column(String(255), nullable=True)
 
     @property
     def scraper(self):
-        return TopAcademyScraper(self.username, self.password, self.access_token)
+        return TopAcademyScraper(self.id, self.username, self.password, self.access_token)
     
     async def get_user_info(self, id, state) -> StudentProfile | None:
         async with self.scraper as scraper:
@@ -29,7 +28,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-            await self.update(access_token=scraper.access_token)
+            # await self.update(access_token=scraper.access_token)
             
             return profile
     
@@ -41,7 +40,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-            await self.update(access_token=scraper.access_token)
+            # await self.update(access_token=scraper.access_token)
 
             return leaderboard
         
@@ -53,7 +52,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-            await self.update(access_token=scraper.access_token)
+            # await self.update(access_token=scraper.access_token)
             
             return rewards
 

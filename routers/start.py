@@ -12,7 +12,7 @@ router.callback_query.middleware(GetUserMiddleware())
 
 inline_keyboard=[
     [
-        InlineKeyboardButton(text="Домашние задания (WIP)", callback_data="homework/")
+        InlineKeyboardButton(text="Домашние задания", callback_data="homework/3")
     ],
     [
         InlineKeyboardButton(text="Посещаемость/оценки", callback_data="activity/0")

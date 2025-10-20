@@ -138,11 +138,24 @@ class TopAcademyScraper:
                     return models.ActivityList(root=data)
 
         return None
+    
+    async def get_homeworks(self, type: int) -> models.HomeworkList | None:
+        url = self.base_url + f"homework/operations/list?page=1&status={type}&type=0&group_id=8"
 
-if __name__ == '__main__':
-    async def main():
-        async with TopAcademyScraper("Marty_fx21", "8z69xdn1") as scraper:
-            user_info = await scraper.get_user_info()
-            print(user_info)
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
 
-    asyncio.run(main())
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "Authorization": f"Bearer {self.access_token}",
+                "Referer": "https://journal.top-academy.ru/"
+            }
+
+            async with self.session.get(url, headers=headers) as response:
+                if response.ok:
+                    data = await response.json()
+                    return models.HomeworkList(root=data)
+
+        return None

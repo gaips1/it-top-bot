@@ -59,6 +59,16 @@ class User(Base):
                 return None
             
             return activities.root
+        
+    async def get_homeworks(self, state, type: int):
+        async with self.scraper as scraper:
+            homeworks = await scraper.get_homeworks(type)
+            if not homeworks:
+                from routers.auth import auth_handler
+                await auth_handler(self.id, state, invalid=True)
+                return None
+            
+            return homeworks.root
 
     async def update(self, **kwargs):
         session: AsyncSession

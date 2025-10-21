@@ -43,6 +43,7 @@ class TopAcademyScraper:
             from database.models import users
             user = await users.get_user_by_id(self.id)
             if user:
+                print("КАМ КАМЫЧ")
                 await user.update(access_token=self.access_token)
             
             return True

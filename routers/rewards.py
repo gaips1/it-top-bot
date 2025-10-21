@@ -2,7 +2,7 @@ from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, C
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 
-from middlewares import GetUserMiddleware
+from utils.middlewares import GetUserMiddleware
 from database.models.users import User
 
 router = Router()
@@ -27,7 +27,7 @@ async def rewards_handler(callback: CallbackQuery, user: User, state: FSMContext
 
     header = "<b>🏆 Ваши награды 🏆</b>\n\n"
     rewards_entries = [
-        f"{reward.date}\n{reward.achievements_name_translated}: +{reward.current_point} {reward.point_types_name_translated}\n----------------------------"
+        f"{reward.date.strftime('%d.%m.%Y %H:%M')}\n{reward.achievements_name_translated}: +{reward.current_point} {reward.point_types_name_translated}\n----------------------------"
         for reward in rewards
     ]
     text = header + "\n".join(rewards_entries)

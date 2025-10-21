@@ -4,40 +4,13 @@ from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, C
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 
-from middlewares import GetUserMiddleware
+from utils.middlewares import GetUserMiddleware
+from utils import split_text
 from database.models.users import User
 
 router = Router()
 router.message.middleware(GetUserMiddleware())
 router.callback_query.middleware(GetUserMiddleware())
-
-def split_text(text: str, limit: int = 4096) -> list[str]:
-    if len(text) <= limit:
-        return [text]
-
-    parts = []
-    remaining_text = text
-
-    while remaining_text:
-        if len(remaining_text) <= limit:
-            parts.append(remaining_text)
-            break
-
-        chunk = remaining_text[:limit]
-        
-        last_newline = chunk.rfind('\n')
-        last_space = chunk.rfind(' ')
-
-        split_pos = max(last_newline, last_space)
-
-        if split_pos == -1:
-            split_pos = limit
-        
-        parts.append(remaining_text[:split_pos])
-        
-        remaining_text = remaining_text[split_pos:].lstrip()
-
-    return parts
 
 @router.callback_query(F.data.startswith("activity/"))
 async def activity_handler(callback: CallbackQuery, user: User, state: FSMContext):

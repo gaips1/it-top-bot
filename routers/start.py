@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 from aiogram.filters import Command
 
-from middlewares import GetUserMiddleware
+from utils.middlewares import GetUserMiddleware
 from database.models.users import User
 
 router = Router()
@@ -31,7 +31,7 @@ async def mm(event: Message | CallbackQuery, user: User, state: FSMContext):
     text = (
         f"Привет, {profile.full_name}!\n"
         f"Ваш ID: {profile.student_id}\n"
-        f"Дата регистрации: {profile.registration_date}\n"
+        f"Дата регистрации: {profile.registration_date.strftime('%d.%m.%Y %H:%M')}\n"
         f"Ваша группа: {profile.group_name}\n\n"
         f"Кол-во топкоинов: {profile.gaming_points[0].points}\n"
         f"Кол-во топгемов: {profile.gaming_points[1].points}\n"

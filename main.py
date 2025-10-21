@@ -28,10 +28,12 @@ async def delete_handler(message: Message, command: CommandObject):
     del_id = command.args.split(" ")[0]
     await users.delete_user(int(del_id))
 
-    return await message.answer(f"Удалил {del_id} из бд")
+    await message.answer(f"Удалил {del_id} из бд")
 
 async def main():
     await init_db()
+
+    bot.cached_me = await bot.get_me()
 
     dp.include_routers(
         routers.start_router,
@@ -39,7 +41,7 @@ async def main():
         routers.ld_router,
         routers.rewards_router,
         routers.activity_router,
-        routers.homework_router,
+        routers.homework_router
     )
 
     await dp.start_polling(bot)

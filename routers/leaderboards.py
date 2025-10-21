@@ -3,7 +3,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
 from aiogram.filters import Command
 
-from middlewares import GetUserMiddleware
+from utils.middlewares import GetUserMiddleware
 from database.models.users import User
 
 router = Router()

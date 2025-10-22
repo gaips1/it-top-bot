@@ -1,4 +1,3 @@
-import asyncio
 import aiohttp
 import api.models as models
 
@@ -95,7 +94,6 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.StudentRatingList(root=[item for item in data if item.get('id') is not None])
-        
         return None
     
     async def get_rewards(self) -> models.RewardsHistory | None:
@@ -116,7 +114,6 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.RewardsHistory(root=data)
-
         return None
     
     async def get_activity(self) -> models.ActivityList | None:
@@ -137,7 +134,6 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.ActivityList(root=data)
-
         return None
     
     async def get_homeworks(self, type: int) -> models.HomeworkList | None:
@@ -158,5 +154,51 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.HomeworkList(root=data)
-
         return None
+    
+    async def get_lesson_evaluations(self) -> models.EvalucationList | None:
+        url = self.base_url + "feedback/students/evaluate-lesson-list"
+
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
+
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "Authorization": f"Bearer {self.access_token}",
+                "Referer": "https://journal.top-academy.ru/"
+            }
+
+            async with self.session.get(url, headers=headers) as response:
+                if response.ok:
+                    data = await response.json()
+                    return models.EvalucationList(root=data)
+        return False
+    
+    async def evaluate_lesson(self, data: models.EvalucateLessonData | dict) -> bool:
+        """
+        key: str\n
+        mark_lesson: int\n
+        mark_teach: int\n
+        tags_lesson: List[str] = []\n
+        tags_teach: List[str] = []
+        """
+        url = self.base_url + "feedback/students/evaluate-lesson"
+        data = data if isinstance(data, dict) else data.model_dump_json()
+
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
+
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "Authorization": f"Bearer {self.access_token}",
+                "Referer": "https://journal.top-academy.ru/"
+            }
+
+            async with self.session.post(url, headers=headers, json=data) as response:
+                if response.ok:
+                    return True
+        return False

@@ -6,7 +6,9 @@ import msgpack
 
 from ..db import AsyncSessionLocal, Base, redis_client
 from api.scraper import TopAcademyScraper
-from api.models.userinfo import StudentProfile
+from api.models import *
+
+evaluate_check_cooldown = {}
 
 class User(Base):
     __tablename__ = 'users'
@@ -28,7 +30,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-            return profile
+        return profile
     
     async def get_leaderboard(self, id, state, is_group: bool = False):
         async with self.scraper as scraper:
@@ -38,7 +40,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
 
-            return leaderboard
+        return leaderboard
         
     async def get_rewards(self, id, state):
         async with self.scraper as scraper:
@@ -48,7 +50,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-            return rewards
+        return rewards
         
     async def get_activities(self, state):
         async with self.scraper as scraper:
@@ -58,7 +60,7 @@ class User(Base):
                 await auth_handler(self.id, state, invalid=True)
                 return None
             
-            return activities.root
+        return activities.root
         
     async def get_homeworks(self, state, type: int):
         async with self.scraper as scraper:
@@ -68,7 +70,35 @@ class User(Base):
                 await auth_handler(self.id, state, invalid=True)
                 return None
             
-            return homeworks.root
+        return homeworks.root
+        
+    async def get_lesson_evaluations(self, state):
+        async with self.scraper as scraper:
+            evaluations = await scraper.get_lesson_evaluations()
+            if not evaluations:
+                from routers.auth import auth_handler
+                await auth_handler(self.id, state, invalid=True)
+                return None
+            
+        return evaluations.root
+        
+    async def evaluate_lesson(
+        self,
+        key: str,
+        mark_lesson: int,
+        mark_teach: int,
+        tags_lesson: list[str] = [],
+        tags_teach: list[str] = []
+    ) -> bool:
+        async with self.scraper as scraper:
+            success = await scraper.evaluate_lesson(
+                {"key": key,
+                "mark_lesson": mark_lesson,
+                "mark_teach": mark_teach,
+                "tags_lesson": tags_lesson,
+                "tags_teach": tags_teach}
+            )
+        return success
 
     async def update(self, **kwargs):
         session: AsyncSession

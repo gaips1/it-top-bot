@@ -10,7 +10,7 @@ from aiogram.filters import Command
 from aiogram.filters.command import CommandObject
 from aiogram.types import Message
 
-import routers
+from routers import *
 from database.db import init_db
 import database.models.users as users
 
@@ -36,12 +36,13 @@ async def main():
     bot.cached_me = await bot.get_me()
 
     dp.include_routers(
-        routers.start_router,
-        routers.auth_router,
-        routers.ld_router,
-        routers.rewards_router,
-        routers.activity_router,
-        routers.homework_router
+        start_router,
+        auth_router,
+        ld_router,
+        rewards_router,
+        activity_router,
+        homework_router,
+        evaluates_router
     )
 
     await dp.start_polling(bot)

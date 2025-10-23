@@ -62,15 +62,25 @@ class User(Base):
             
         return activities.root
         
-    async def get_homeworks(self, state, type: int):
+    async def get_homeworks(self, state, type: int, page: int = 1):
         async with self.scraper as scraper:
-            homeworks = await scraper.get_homeworks(type)
+            homeworks = await scraper.get_homeworks(type, page)
             if not homeworks:
                 from routers.auth import auth_handler
                 await auth_handler(self.id, state, invalid=True)
                 return None
             
         return homeworks.root
+    
+    async def get_homework_count(self, state):
+        async with self.scraper as scraper:
+            count = await scraper.get_homework_count()
+            if not count:
+                from routers.auth import auth_handler
+                await auth_handler(self.id, state, invalid=True)
+                return None
+            
+        return count.root
         
     async def get_lesson_evaluations(self, state):
         async with self.scraper as scraper:

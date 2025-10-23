@@ -16,13 +16,20 @@ router.callback_query.middleware(GetUserMiddleware())
 @router.callback_query(F.data.startswith("homework/"))
 async def homework_handler(callback: CallbackQuery, user: User, state: FSMContext):
     try:
-        type = int(callback.data.split('/')[-1])
+        type = int(callback.data.split('/')[1])
+        i = int(callback.data.split('/')[2])
     except (IndexError, ValueError):
-        return
+        return await callback.message.edit_text("Перезапустите меню /start")
 
-    homeworks = await user.get_homeworks(state, type)
-    if not homeworks:
+    homeworks = await user.get_homeworks(state, type, i)
+    homework_count = await user.get_homework_count(state)
+    if not homeworks or not homework_count:
         return
+    
+    for counter in homework_count:
+        if counter.counter_type == type:
+            homework_count = counter.counter
+            break
     
     homeworks_by_spec = defaultdict(list)
     for hw in homeworks:
@@ -33,7 +40,6 @@ async def homework_handler(callback: CallbackQuery, user: User, state: FSMContex
         text_parts.append(f"📚 <b>{spec}</b>")
         for hw in hws:
             hw: Homework
-
             text_parts.append(f"  📌 <b>Тема:</b> {hw.theme}")
             text_parts.append(f"  👨‍🏫 <b>Преподаватель:</b> {hw.fio_teach}")
             text_parts.append(f"  📅 <b>Выдано:</b> {hw.creation_time.strftime('%d.%m.%Y')}")
@@ -59,24 +65,31 @@ async def homework_handler(callback: CallbackQuery, user: User, state: FSMContex
 
             text_parts.append("\n")
 
-    text = "Домашние задания (последние 6)\n\n" + "\n".join(text_parts)
+    text = "\n".join(text_parts)
 
     reply_markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text=f"Текущие дз {"(Вы здесь)" if type == 3 else ""}" , callback_data="homework/3"),
+                InlineKeyboardButton(text="Вперед", callback_data="homework/" + str(type) + "/" + str(i+1)),
             ],
             [
-                InlineKeyboardButton(text=f"На проверке {"(Вы здесь)" if type == 2 else ""}", callback_data="homework/2"),
+                InlineKeyboardButton(text=f"Текущие дз {"(Вы здесь)" if type == 3 else ""}" , callback_data="homework/3/1"),
             ],
             [
-                InlineKeyboardButton(text=f"Проверено {"(Вы здесь)" if type == 1 else ""}", callback_data="homework/1"),
+                InlineKeyboardButton(text=f"На проверке {"(Вы здесь)" if type == 2 else ""}", callback_data="homework/2/1"),
+            ],
+            [
+                InlineKeyboardButton(text=f"Проверено {"(Вы здесь)" if type == 1 else ""}", callback_data="homework/1/1"),
             ],
             [
                 InlineKeyboardButton(text="Главное Меню", callback_data="mm")
             ]
         ]
     )
+    if homework_count - (i * 6) <= 0:
+        reply_markup.inline_keyboard[0].pop()
+    if i > 1:
+        reply_markup.inline_keyboard[0].insert(0, InlineKeyboardButton(text="Назад", callback_data="homework/" + str(type) + "/" + str(i-1)))
     
     await callback.answer()
 

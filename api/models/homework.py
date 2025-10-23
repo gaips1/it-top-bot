@@ -38,5 +38,12 @@ class Homework(BaseModel):
     homework_comment: HomeworkComment | None = None
     cover_image: str | None = None
 
+class HomeworkCounter(BaseModel):
+    counter_type: int
+    counter: int
+
+class HomeworkCounterList(RootModel):
+    root: List[HomeworkCounter]
+
 class HomeworkList(RootModel):
     root: List[Homework]

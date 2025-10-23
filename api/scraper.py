@@ -42,7 +42,6 @@ class TopAcademyScraper:
             from database.models import users
             user = await users.get_user_by_id(self.id)
             if user:
-                print("КАМ КАМЫЧ")
                 await user.update(access_token=self.access_token)
             
             return True
@@ -94,7 +93,6 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.StudentRatingList(root=[item for item in data if item.get('id') is not None])
-        return None
     
     async def get_rewards(self) -> models.RewardsHistory | None:
         url = self.base_url + "dashboard/progress/activity"
@@ -114,7 +112,6 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.RewardsHistory(root=data)
-        return None
     
     async def get_activity(self) -> models.ActivityList | None:
         url = self.base_url + "progress/operations/student-visits"
@@ -134,10 +131,9 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.ActivityList(root=data)
-        return None
     
-    async def get_homeworks(self, type: int) -> models.HomeworkList | None:
-        url = self.base_url + f"homework/operations/list?page=1&status={type}&type=0&group_id=8"
+    async def get_homeworks(self, type: int, page: int) -> models.HomeworkList | None:
+        url = self.base_url + f"homework/operations/list?page={page}&status={type}&type=0&group_id=8"
 
         for attempt in range(2):
             if (attempt == 0 and not self.access_token) or attempt == 1:
@@ -154,7 +150,25 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.HomeworkList(root=data)
-        return None
+        
+    async def get_homework_count(self) -> models.HomeworkCounterList | None:
+        url = self.base_url + "count/homework?type=0&group_id=8"
+
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
+
+            headers = {
+                "accept": "application/json, text/plain, */*",
+                "Authorization": f"Bearer {self.access_token}",
+                "Referer": "https://journal.top-academy.ru/"
+            }
+
+            async with self.session.get(url, headers=headers) as response:
+                if response.ok:
+                    data = await response.json()
+                    return models.HomeworkCounterList(root=data)
     
     async def get_lesson_evaluations(self) -> models.EvalucationList | None:
         url = self.base_url + "feedback/students/evaluate-lesson-list"
@@ -174,8 +188,7 @@ class TopAcademyScraper:
                 if response.ok:
                     data = await response.json()
                     return models.EvalucationList(root=data)
-        return False
-    
+                
     async def evaluate_lesson(self, data: models.EvalucateLessonData | dict) -> bool:
         """
         key: str\n

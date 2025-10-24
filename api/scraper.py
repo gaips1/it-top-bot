@@ -32,134 +32,102 @@ class TopAcademyScraper:
 
     async def _login(self) -> bool:
         async with self.session.post(
-            self.base_url + "auth/login",
-            headers = self.default_headers,
-            json = self.login_payload
-        ) as login_response:
-            login_data = await login_response.json()
-            self.access_token = login_data.get('access_token') if isinstance(login_data, dict) else None
+            f"{self.base_url}auth/login",
+            headers=self.default_headers,
+            json=self.login_payload,
+        ) as response:
+            if response.status != 200:
+                return False
 
+            try:
+                data = await response.json()
+            except aiohttp.ContentTypeError:
+                print(1)
+                return False
+
+            self.access_token = data.get("access_token")
             if not self.access_token:
                 return False
-            
-            print(f"Logged in as {self.username}")
 
-            from database.models import users
-            user = await users.get_user_by_id(self.id)
-            if user:
-                await user.update(access_token=self.access_token)
-            
+            print(f"✅ Logged in as {self.username}")
+
+            try:
+                from database.models import users
+                user = await users.get_user_by_id(self.id)
+                if user:
+                    await user.update(access_token=self.access_token)
+            except Exception as e:
+                print(f"couldnt update user token: {e}")
+
             return True
+        
+    async def _request(self, method: str, endpoint: str, *, json=None, retry: bool = True):
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+
+        if not self.access_token and not await self._login():
+            return None
+
+        url = self.base_url + endpoint
+
+        try:
+            async with self.session.request(method.upper(), url, headers=self.default_headers, json=json) as response:
+                if response.status == 401 and retry:
+                    if await self._login():
+                        return await self._request(method, endpoint, json=json)
+                    return None
+
+                if 200 <= response.status < 300:
+                    try:
+                        resp = await response.json()
+                        return resp
+                    except aiohttp.ContentTypeError:
+                        print(f"non-json response from {endpoint}")
+                        return None
+
+                print(f"{response.status} error: {endpoint}")
+                return None
+
+        except aiohttp.ClientError as e:
+            print(f"network error: {e}")
+            return None
     
     async def get_user_info(self) -> models.StudentProfile | None:
-        url = self.base_url + "settings/user-info"
+        data = await self._request("GET", "settings/user-info")
+        return models.StudentProfile(**data) if data else None
 
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
-
-            async with self.session.get(url, headers=self.default_headers) as response:
-                if response.ok:
-                    data = await response.json()
-                    return models.StudentProfile(**data)
-    
     async def get_leaderboard(self, is_group: bool) -> models.StudentRatingList | None:
-        endpoint = "leader-group" if is_group else "leader-stream"
-        url = f"{self.base_url}dashboard/progress/{endpoint}"
+        endpoint = f"dashboard/progress/{'leader-group' if is_group else 'leader-stream'}"
+        data = await self._request("GET", endpoint)
+        if data:
+            valid_items = [item for item in data if item.get("id") is not None]
+            return models.StudentRatingList(root=valid_items)
+        return None
 
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
-
-            async with self.session.get(url, headers=self.default_headers) as response:
-                if response.ok:
-                    data = await response.json()
-                    return models.StudentRatingList(root=[item for item in data if item.get('id') is not None])
-    
     async def get_rewards(self) -> models.RewardsHistory | None:
-        url = self.base_url + "dashboard/progress/activity"
+        data = await self._request("GET", "dashboard/progress/activity")
+        return models.RewardsHistory(root=data)
 
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
-
-            async with self.session.get(url, headers=self.default_headers) as response:
-                if response.ok:
-                    data = await response.json()
-                    return models.RewardsHistory(root=data)
-    
     async def get_activity(self) -> models.ActivityList | None:
-        url = self.base_url + "progress/operations/student-visits"
+        data = await self._request("GET", "progress/operations/student-visits")
+        return models.ActivityList(root=data)
 
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
+    async def get_homeworks(self, type: int, page: int, group_id: int = 8) -> models.HomeworkList | None:
+        endpoint = f"homework/operations/list?page={page}&status={type}&type=0&group_id={group_id}"
+        data = await self._request("GET", endpoint)
+        return models.HomeworkList(root=data)
 
-            async with self.session.get(url, headers=self.default_headers) as response:
-                if response.ok:
-                    data = await response.json()
-                    return models.ActivityList(root=data)
-    
-    async def get_homeworks(self, type: int, page: int) -> models.HomeworkList | None:
-        url = self.base_url + f"homework/operations/list?page={page}&status={type}&type=0&group_id=8"
+    async def get_homework_count(self, group_id: int = 8) -> models.HomeworkCounterList | None:
+        endpoint = f"count/homework?type=0&group_id={group_id}"
+        data = await self._request("GET", endpoint)
+        return models.HomeworkCounterList(root=data)
 
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
-
-            async with self.session.get(url, headers=self.default_headers) as response:
-                if response.ok:
-                    data = await response.json()
-                    return models.HomeworkList(root=data)
-        
-    async def get_homework_count(self) -> models.HomeworkCounterList | None:
-        url = self.base_url + "count/homework?type=0&group_id=8"
-
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
-
-            async with self.session.get(url, headers=self.default_headers) as response:
-                if response.ok:
-                    data = await response.json()
-                    return models.HomeworkCounterList(root=data)
-    
     async def get_lesson_evaluations(self) -> models.EvalucationList | None:
-        url = self.base_url + "feedback/students/evaluate-lesson-list"
+        data = await self._request("GET", "feedback/students/evaluate-lesson-list")
+        return models.EvalucationList(root=data)
 
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
-
-            async with self.session.get(url, headers=self.default_headers) as response:
-                if response.ok:
-                    data = await response.json()
-                    return models.EvalucationList(root=data)
-                
     async def evaluate_lesson(self, data: models.EvalucateLessonData | dict) -> bool:
-        """
-        key: str\n
-        mark_lesson: int\n
-        mark_teach: int\n
-        tags_lesson: List[str] = []\n
-        tags_teach: List[str] = []
-        """
-        url = self.base_url + "feedback/students/evaluate-lesson"
-        data = data if isinstance(data, dict) else data.model_dump()
-
-        for attempt in range(2):
-            if (attempt == 0 and not self.access_token) or attempt == 1:
-                if not await self._login():
-                    break
-
-            async with self.session.post(url, headers=self.default_headers, json=data) as response:
-                if response.ok:
-                    return True
-        return False
+        if not isinstance(data, dict):
+            data = data.model_dump()
+        result = await self._request("POST", "feedback/students/evaluate-lesson", json=data)
+        return result is not None

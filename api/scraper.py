@@ -77,7 +77,7 @@ class TopAcademyScraper:
                         return await self._request(method, endpoint, json=json)
                     return None
 
-                if 200 <= response.status < 300:
+                if response.ok:
                     try:
                         resp = await response.json()
                         return resp

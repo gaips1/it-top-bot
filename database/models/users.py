@@ -27,7 +27,7 @@ class User(Base):
             profile = await scraper.get_user_info()
             if not profile:
                 from routers.auth import auth_handler
-                await auth_handler(id, state, invalid=True)
+                await auth_handler(id, state, invalid=True, data="не смог получить профиль. ")
                 return None
             
             return profile
@@ -37,7 +37,7 @@ class User(Base):
             leaderboard = await scraper.get_leaderboard(is_group)
             if not leaderboard:
                 from routers.auth import auth_handler
-                await auth_handler(id, state, invalid=True)
+                await auth_handler(id, state, invalid=True, data="не смог получить лидерборд. ")
                 return None
 
             return leaderboard
@@ -47,7 +47,7 @@ class User(Base):
             rewards = await scraper.get_rewards()
             if not rewards:
                 from routers.auth import auth_handler
-                await auth_handler(id, state, invalid=True)
+                await auth_handler(id, state, invalid=True, data="не смог получить награды. ")
                 return None
             
             return rewards
@@ -57,7 +57,7 @@ class User(Base):
             activities = await scraper.get_activity()
             if not activities:
                 from routers.auth import auth_handler
-                await auth_handler(self.id, state, invalid=True)
+                await auth_handler(self.id, state, invalid=True, data="не смог получить активности. ")
                 return None
             
             return activities.root
@@ -67,7 +67,7 @@ class User(Base):
             homeworks = await scraper.get_homeworks(type, page)
             if not homeworks:
                 from routers.auth import auth_handler
-                await auth_handler(self.id, state, invalid=True)
+                await auth_handler(self.id, state, invalid=True, data="не смог получить домашки. ")
                 return None
             
             return homeworks.root
@@ -77,7 +77,7 @@ class User(Base):
             count = await scraper.get_homework_count()
             if not count:
                 from routers.auth import auth_handler
-                await auth_handler(self.id, state, invalid=True)
+                await auth_handler(self.id, state, invalid=True, data="не смог получить количество домашних работ. ")
                 return None
             
             return count.root
@@ -87,7 +87,7 @@ class User(Base):
             evaluations = await scraper.get_lesson_evaluations()
             if not evaluations:
                 from routers.auth import auth_handler
-                await auth_handler(self.id, state, invalid=True)
+                await auth_handler(self.id, state, invalid=True, data="не смог получить оценки уроков. ")
                 return None
             
             return evaluations.root

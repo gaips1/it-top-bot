@@ -16,7 +16,7 @@ class GetUserMiddleware(BaseMiddleware):
         user = await users.get_user_by_id(event.from_user.id)
 
         if not user:
-            return await auth_handler(event.from_user.id, data["state"])
+            return await auth_handler(event.from_user.id, data["state"], data="юзер не найден. ")
         
         data['user'] = user
         

@@ -37,12 +37,12 @@ async def main():
 
     dp.include_routers(
         start_router,
-        auth_router,
         ld_router,
         rewards_router,
         activity_router,
         homework_router,
-        evaluates_router
+        evaluates_router,
+        auth_router
     )
 
     await dp.start_polling(bot)

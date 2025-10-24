@@ -30,7 +30,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-        return profile
+            return profile
     
     async def get_leaderboard(self, id, state, is_group: bool = False):
         async with self.scraper as scraper:
@@ -40,7 +40,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
 
-        return leaderboard
+            return leaderboard
         
     async def get_rewards(self, id, state):
         async with self.scraper as scraper:
@@ -50,7 +50,7 @@ class User(Base):
                 await auth_handler(id, state, invalid=True)
                 return None
             
-        return rewards
+            return rewards
         
     async def get_activities(self, state):
         async with self.scraper as scraper:
@@ -60,7 +60,7 @@ class User(Base):
                 await auth_handler(self.id, state, invalid=True)
                 return None
             
-        return activities.root
+            return activities.root
         
     async def get_homeworks(self, state, type: int, page: int = 1):
         async with self.scraper as scraper:
@@ -70,7 +70,7 @@ class User(Base):
                 await auth_handler(self.id, state, invalid=True)
                 return None
             
-        return homeworks.root
+            return homeworks.root
     
     async def get_homework_count(self, state):
         async with self.scraper as scraper:
@@ -80,7 +80,7 @@ class User(Base):
                 await auth_handler(self.id, state, invalid=True)
                 return None
             
-        return count.root
+            return count.root
         
     async def get_lesson_evaluations(self, state):
         async with self.scraper as scraper:
@@ -90,7 +90,7 @@ class User(Base):
                 await auth_handler(self.id, state, invalid=True)
                 return None
             
-        return evaluations.root
+            return evaluations.root
         
     async def evaluate_lesson(
         self,
@@ -108,7 +108,7 @@ class User(Base):
                 "tags_lesson": tags_lesson,
                 "tags_teach": tags_teach}
             )
-        return success
+            return success
 
     async def update(self, **kwargs):
         session: AsyncSession

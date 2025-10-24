@@ -13,16 +13,26 @@ router = Router()
 class LoginForm(StatesGroup):
     text = State()
 
-async def auth_handler(id: int, state: FSMContext, first_time = True, invalid = False):
+async def clr_state(state: FSMContext):
+    await asyncio.sleep(200)
+    await state.clear()
+
+async def auth_handler(id: int, state: FSMContext, first_time = True, invalid = False, data: str = ""):
     await state.set_state(LoginForm.text)
+
+    text = "Добро пожаловать! Пожалуйста, введите ваш логин и пароль от Top Academy в формате: `логин пароль`. Для отмены введите `отмена`."
 
     from main import bot
     if invalid:
-        return await bot.send_message(id, "Неверный логин или пароль. Пожалуйста, введите действующие данные.\n\nВведите ваш логин и пароль в формате: `логин пароль`.")
+        text = "Неверный логин или пароль. Пожалуйста, введите действующие данные.\n\nВведите ваш логин и пароль в формате: `логин пароль`."
     elif first_time:
-        return await bot.send_message(id, "Пожалуйста, введите ваш логин и пароль от Top Academy в формате: `логин пароль`. Для отмены введите `отмена`.")
-    
-    await bot.send_message(id, "Добро пожаловать! Пожалуйста, введите ваш логин и пароль от Top Academy в формате: `логин пароль`. Для отмены введите `отмена`.")
+        text = "Пожалуйста, введите ваш логин и пароль от Top Academy в формате: `логин пароль`. Для отмены введите `отмена`."
+
+    if data and id == 1014268792:
+        text += f"\n\nДополнительные данные для отладки:\n{data}"
+
+    await bot.send_message(id, text)
+    asyncio.create_task(clr_state(state))
 
 @router.message(LoginForm.text)
 async def login(message: Message, state: FSMContext):

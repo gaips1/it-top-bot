@@ -16,6 +16,11 @@ class TopAcademyScraper:
             "password": self.password,
             "username": self.username
         }
+        self.default_headers = {
+            "accept": "application/json, text/plain, */*",
+            "Authorization": f"Bearer {self.access_token}",
+            "Referer": "https://journal.top-academy.ru/"
+        }
 
     async def __aenter__(self):
         self.session = aiohttp.ClientSession()
@@ -28,7 +33,7 @@ class TopAcademyScraper:
     async def _login(self) -> bool:
         async with self.session.post(
             self.base_url + "auth/login",
-            headers = {"accept": "application/json, text/plain, */*", "Referer": "https://journal.top-academy.ru/"},
+            headers = self.default_headers,
             json = self.login_payload
         ) as login_response:
             login_data = await login_response.json()
@@ -47,32 +52,17 @@ class TopAcademyScraper:
             return True
     
     async def get_user_info(self) -> models.StudentProfile | None:
-        if not self.access_token:
-            logged_in = await self._login()
-            if not logged_in:
-                return None
+        url = self.base_url + "settings/user-info"
 
-        headers = {
-            "accept": "application/json, text/plain, */*",
-            "Authorization": f"Bearer {self.access_token}",
-            "Referer": "https://journal.top-academy.ru/"
-        }
+        for attempt in range(2):
+            if (attempt == 0 and not self.access_token) or attempt == 1:
+                if not await self._login():
+                    break
 
-        async with self.session.get(
-            self.base_url + "settings/user-info",
-            headers = headers
-        ) as user_response:
-            if user_response.ok:
-                user_data = await user_response.json()
-                user_info = models.StudentProfile(**user_data)
-                return user_info
-        
-        lgn = await self._login()
-        if not lgn:
-            return None
-        
-        info = await self.get_user_info()
-        return info
+            async with self.session.get(url, headers=self.default_headers) as response:
+                if response.ok:
+                    data = await response.json()
+                    return models.StudentProfile(**data)
     
     async def get_leaderboard(self, is_group: bool) -> models.StudentRatingList | None:
         endpoint = "leader-group" if is_group else "leader-stream"
@@ -83,13 +73,7 @@ class TopAcademyScraper:
                 if not await self._login():
                     break
 
-            headers = {
-                "accept": "application/json, text/plain, */*",
-                "Authorization": f"Bearer {self.access_token}",
-                "Referer": "https://journal.top-academy.ru/"
-            }
-
-            async with self.session.get(url, headers=headers) as response:
+            async with self.session.get(url, headers=self.default_headers) as response:
                 if response.ok:
                     data = await response.json()
                     return models.StudentRatingList(root=[item for item in data if item.get('id') is not None])
@@ -102,13 +86,7 @@ class TopAcademyScraper:
                 if not await self._login():
                     break
 
-            headers = {
-                "accept": "application/json, text/plain, */*",
-                "Authorization": f"Bearer {self.access_token}",
-                "Referer": "https://journal.top-academy.ru/"
-            }
-
-            async with self.session.get(url, headers=headers) as response:
+            async with self.session.get(url, headers=self.default_headers) as response:
                 if response.ok:
                     data = await response.json()
                     return models.RewardsHistory(root=data)
@@ -121,13 +99,7 @@ class TopAcademyScraper:
                 if not await self._login():
                     break
 
-            headers = {
-                "accept": "application/json, text/plain, */*",
-                "Authorization": f"Bearer {self.access_token}",
-                "Referer": "https://journal.top-academy.ru/"
-            }
-
-            async with self.session.get(url, headers=headers) as response:
+            async with self.session.get(url, headers=self.default_headers) as response:
                 if response.ok:
                     data = await response.json()
                     return models.ActivityList(root=data)
@@ -140,13 +112,7 @@ class TopAcademyScraper:
                 if not await self._login():
                     break
 
-            headers = {
-                "accept": "application/json, text/plain, */*",
-                "Authorization": f"Bearer {self.access_token}",
-                "Referer": "https://journal.top-academy.ru/"
-            }
-
-            async with self.session.get(url, headers=headers) as response:
+            async with self.session.get(url, headers=self.default_headers) as response:
                 if response.ok:
                     data = await response.json()
                     return models.HomeworkList(root=data)
@@ -159,13 +125,7 @@ class TopAcademyScraper:
                 if not await self._login():
                     break
 
-            headers = {
-                "accept": "application/json, text/plain, */*",
-                "Authorization": f"Bearer {self.access_token}",
-                "Referer": "https://journal.top-academy.ru/"
-            }
-
-            async with self.session.get(url, headers=headers) as response:
+            async with self.session.get(url, headers=self.default_headers) as response:
                 if response.ok:
                     data = await response.json()
                     return models.HomeworkCounterList(root=data)
@@ -178,13 +138,7 @@ class TopAcademyScraper:
                 if not await self._login():
                     break
 
-            headers = {
-                "accept": "application/json, text/plain, */*",
-                "Authorization": f"Bearer {self.access_token}",
-                "Referer": "https://journal.top-academy.ru/"
-            }
-
-            async with self.session.get(url, headers=headers) as response:
+            async with self.session.get(url, headers=self.default_headers) as response:
                 if response.ok:
                     data = await response.json()
                     return models.EvalucationList(root=data)
@@ -198,20 +152,14 @@ class TopAcademyScraper:
         tags_teach: List[str] = []
         """
         url = self.base_url + "feedback/students/evaluate-lesson"
-        data = data if isinstance(data, dict) else data.model_dump_json()
+        data = data if isinstance(data, dict) else data.model_dump()
 
         for attempt in range(2):
             if (attempt == 0 and not self.access_token) or attempt == 1:
                 if not await self._login():
                     break
 
-            headers = {
-                "accept": "application/json, text/plain, */*",
-                "Authorization": f"Bearer {self.access_token}",
-                "Referer": "https://journal.top-academy.ru/"
-            }
-
-            async with self.session.post(url, headers=headers, json=data) as response:
+            async with self.session.post(url, headers=self.default_headers, json=data) as response:
                 if response.ok:
                     return True
         return False
